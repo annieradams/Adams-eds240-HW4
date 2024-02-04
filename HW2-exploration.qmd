@@ -5,8 +5,7 @@ author: "Annie Adams"
 date: 2023-01-27
 toc: true
 format: html
-editor_options: 
-  chunk_output_type: console
+
 ---
 
 ## Setup
