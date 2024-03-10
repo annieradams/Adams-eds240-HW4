@@ -1,0 +1,362 @@
+---
+title: "HW3"
+author: "Annie Adams"
+date: 2024-02-22
+toc: true
+format:
+  html:
+    embed-resources: true
+editor: visual
+---
+
+**Which option do you plan to pursue?**
+
+I plan to pursue option 2, an infographic.
+
+**Restate your question(s). Has this changed at all since HW #1? If yes, how so?**
+
+How many bikes are on the road in Seattle? How does bike usage differ cross different areas of the city? How does does bike usage change over season?
+
+My questions have not changed much! I still hope to answer the question of how does bike usage differ across the city by including a map with the four different locations of bike counters. I also want to still include seasonal changes in my infographic. To do this I think I will also add data on the average monthly temperature and precipitation for the time period my data includes. For the third aspect/question of my infographic, I plan to include the question of "are southbound and northbound counters experiencing the same traffic?"
+
+**Explain which variables from your data set(s) you will use to answer your question(s).**
+
+My dataset is quite simple, and I will be using all variables from it for my infographic. These variables include `date`, `total_bike_count`, `location`, `northbound` ( an indicator for how many of the total bikes were travelling north), `southbound` ( an indicator for how many of the total bikes were travelling south). I also plan to use the metadata to find the exact coordinates of the four bike locations in order to create a map of the stations. The weather variables I will use will include precipitation by month and average temperature by month, which I will then aggregate to take the average of across the number of years that I include in my data.
+
+**Find at least two data visualizations that you could (potentially) borrow / adapt pieces from**
+
+I would like to adapt pieces from the visualization by Cedric Scherer below. I really like the range of temperature that is displayed within the color bar. I think it would be cool to add the temperatures to my ridge density plot at the base of each year.
+
+```{r}
+#| eval: true
+#| echo: false
+#| fig-align: "center"
+#| out-width: "100%"
+#| fig-alt: "Alt text here"
+knitr::include_graphics("images/temp_ex.png")
+```
+
+I would also like to adapt pieces from the map visualization below, also created by Scherer. I really like how it includes a lot of different information in a simple manner. I plan to have a similar schema where I have points of the bike locations with labels set up. In the same manner that Scherer specifies high and low temperatures/elevation, I would provide some information about the nature of the location (i.e. is it in a popular neighborhood, on a bike trail, near the water, etc.)
+
+```{r}
+#| eval: true
+#| echo: false
+#| fig-align: "center"
+#| out-width: "100%"
+#| fig-alt: "Alt text here"
+knitr::include_graphics("images/map_ex.png")
+```
+
+**Hand-draw your anticipated three visualizations (option 1) or infographic (option 2)**
+
+```{r}
+#| eval: true
+#| echo: false
+#| fig-align: "center"
+#| out-width: "100%"
+#| fig-alt: "Alt text here"
+knitr::include_graphics("images/infographic_sketch.png")
+```
+
+```{r message = FALSE}
+library(showtext)
+library(dplyr)
+library(ggplot2)
+library(sf)
+library(ggmap)
+library(tmap)
+library(lubridate)
+library(tidyverse)
+library(ggimage)
+```
+
+### Import and Wrangle Data
+
+```{r message = FALSE}
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                                import data                               ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+broadway<- read.csv(here::here("raw-data","Broadway_Cycle_Track_North_Of_E_Union_St_Bicycle_Counter__Out_of_Service__20240202.csv"))
+burke <- read.csv(here::here("raw-data","Burke_Gilman_Trail_north_of_NE_70th_St_Bicycle_and_Pedestrian_Counter_20240202.csv"))
+chief <- read.csv(here::here("raw-data","Chief_Sealth_Trail_North_of_Thistle_Bicycle_Counter__Out_of_Service__20240202.csv"))
+elliott <- read.csv(here::here("raw-data","Elliott_Bay_Trail_in_Myrtle_Edwards_Park_Bicycle_and_Pedestrian_Counter__Out_of_Service__20240202.csv"))
+mts <- read.csv(here::here("raw-data","MTS_Trail_west_of_I-90_Bridge_Bicycle_and_Pedestrian_Counter__Out_of_Service__20240202.csv"))
+fifty_eight <- read.csv(here::here("raw-data","NW_58th_St_Greenway_at_22nd_Ave_NW_Bicycle_Counter__Out_of_Service__20240202.csv"))
+
+
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                                merge dagta                            ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# rename total bike column for dataframes with bike only, create total bike column for dataframes with pedestrians ( since we dont want to include pedestrians in our dataframe)
+#do this renaming and totaling schema for all 7 datasets
+
+broadway <- broadway %>% rename("bike_total" = "Broadway.Cycle.Track.North.Of.E.Union.St.Total")
+burke$bike_total <- burke$Bike.North + burke$Bike.South
+chief$bike_total <- chief$Bike.North + chief$Bike.South
+elliott$bike_total <- elliott$Bike.North + elliott$Bike.South
+fifty_eight <- fifty_eight %>% rename("bike_total" = "NW.58th.St.Greenway.st.22nd.Ave.NW.Total")
+mts$bike_total <- mts$Bike.East + mts$Bike.West
+
+
+#rename southbound and northbound columns to have consistent naming for all datasets
+#add locations column for each dataset with a string of what the location is 
+#do this renaming and adding column step for all 7 datasets
+burke_clean <- burke %>% 
+  rename("SB" = "Bike.South" , "NB" = "Bike.North") %>% 
+  select(Date, bike_total, NB, SB, ) %>% 
+  mutate(loc = "Burke")
+
+chief_clean <- chief %>% 
+  rename("SB" = "Bike.South" , "NB" = "Bike.North") %>% 
+  select(Date, bike_total, NB, SB, ) %>% 
+  mutate(loc = "Chief")
+
+elliott_clean <- elliott %>% 
+  rename("SB" = "Bike.South" , "NB" = "Bike.North") %>% 
+  select(Date, bike_total, NB, SB, ) %>% 
+  mutate(loc = "Elliott")
+
+fifty_eight_clean <- fifty_eight %>% 
+  rename ("EB" = "East", "WB" = "West") %>% 
+  select(Date, bike_total, EB, WB) %>% 
+  mutate(loc = "58th")
+
+  
+
+mts_clean <- mts %>% 
+  rename("WB" = "Bike.West" , "EB" = "Bike.East") %>% 
+  select(Date, bike_total, WB, EB, ) %>% 
+  mutate(loc = "MTS Trail")
+
+broadway_clean <- broadway %>% 
+  mutate(loc = "Broadway")
+
+
+#merge all cleaned dataframes that track north and south traffic
+bike_data <- bind_rows(broadway_clean, burke_clean, chief_clean, elliott_clean,  mts_clean, fifty_eight_clean)
+
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                               create filtered dataframes                           ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+# update bike data ( base data frame) date column to be in correct format, add year and month column for future filtering ------
+
+#update Date column to type POSIXct for future wrangling, format = current way date column is formatted
+bike_data$Date <- as.POSIXct(bike_data$Date, format = "%m/%d/%Y %I:%M:%S %p")
+
+# create year column with year
+bike_data$Year <- year(bike_data$Date)
+
+#create month column with month
+bike_data$Month <- month(bike_data$Date) 
+years <- c(2014,2015,2016,2017,2018,2019,2020)
+bike <- bike_data[bike_data$Year %in% years, ]
+#create a dataframe of daily with the date, location and sum of bike counts for that day (i.e. aggregate hourly counts to be daily)-----
+
+bike_data_daily <- bike %>%
+  #create date column that is aggregated by day
+  mutate(date = floor_date(Date, unit = "day")) %>%
+  #group by date and location
+  group_by(date, loc) %>%
+  #create new column that has the daily count of bikes at each location each day
+  summarize(daily_sum = sum(bike_total, na.rm = TRUE), .groups = 'drop') %>%
+  #drop na values (0)
+  drop_na()
+
+#create a dataframe that aggregates the monthly bike counts across all locations, should have two columns only ( month, monthly_total)
+
+bike_data_monthly <-bike %>%
+  #group by month
+  group_by(Month) %>%
+  #create new column that has the monthly count of bikes at all locations
+  summarize(monthly_total = sum(bike_total, na.rm = TRUE)) %>%
+  #drop na values (0)
+  drop_na()
+
+# create data frame of monthly bike counts at each locations, should have three columns ( month, monthly total, location)
+bike_data_monthly_loc <-bike %>%
+  #group by month and location
+  group_by(Month, loc) %>%
+  #create new column that has the monthly count of bikes for each location
+  summarize(monthly_total = sum(bike_total, na.rm = TRUE)) %>%
+  #drop na values (0)
+  drop_na()
+
+bike_data_year_month<- bike %>% 
+  group_by(Year, Month) %>% 
+  summarize(monthly_total = sum(bike_total, na.rm = TRUE)) %>%
+  #drop na values (0)
+  drop_na()
+#make month a factor
+bike_data_year_month$Month <- factor(month.abb[bike_data_year_month$Month], levels = month.abb)
+#make year a factor
+bike_data_year_month$Year <- factor(bike_data_year_month$Year)
+
+
+  
+
+#create filtered dataframe for heatmap
+bike_data_yearly <- bike %>% 
+  group_by(Year) %>% 
+  summarize(yearly_total = sum(bike_total, na.rm = TRUE)) # add yearly totals for every month/year
+```
+
+### Add necessary fonts and icon files
+
+```{r}
+#add font awesome icons 
+font_add(family = "fa-brands",
+         regular = here::here("otfs", "Font Awesome 6 Brands-Regular-400.otf"))
+font_add(family = "fa-regular",
+         regular = here::here("otfs", "Font Awesome 6 Free-Regular-400.otf")) 
+font_add(family = "fa-solid",
+         regular = here::here("otfs", "Font Awesome 6 Free-Solid-900.otf"))
+
+
+#..........................import fonts..........................
+# `name` is the name of the font as it appears in Google Fonts
+# `family` is the user-specified id that you'll use to apply a font in your ggpplot
+#add montserrat font
+font_add_google(name = "Montserrat", family = "montserrat")
+
+#................enable {showtext} for rendering.................
+showtext_auto()
+
+
+```
+
+### Create area plot of bikes across month at different locations
+
+```{r}
+
+
+#create breaks and labels for x axis labeling
+month_breaks <- 1:12  
+month_labels <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+#create color palette
+custom_colors <- c( 
+                   "Broadway" = "#706513",  
+                   "Burke" = "#B57114", 
+                   "Elliott" = "#962B09",
+                   "Chief"= "#F2C078",
+                   "MTS Trail" = "#C1DBB3",
+                   "58th"= "#3891A6")  
+
+
+#create geom area plot to show how bike traffic changes seasonally across diff locations
+
+# add data, fill area by location of bike sensor
+ggplot(data = bike_data_monthly_loc,  aes(x = Month, y = monthly_total, fill = loc)) +
+  #decrease the opacity
+  geom_area(alpha = 0.6) +
+  #add  color palette defined above
+  scale_fill_manual(values = custom_colors, labels = c("58th St.", "Broadway St.", "Burke Gilman Trail", "Chief Sealth Trail", "Elliott Bay Trail", "MTS Trail")) +
+  #add rotated upward bike image, play around with sizes to fit top ridge of graph
+  geom_image(y = 510000, x = 2.5, image = "images/rotate_up_bike.png", size = .2 ) +
+  #add rotated downward bike image, play around with sizes to fit top ridge of graph
+  geom_image(y = 750000, x = 9.5, image = "images/rotate_down_bike.png", size = .2 ) +
+#add title, subtitle, x and y axis labels, and legend title
+  labs(title = "Number of Bikers counted at Seattle Bike Detection Stations ",
+       subtitle = "Data from 2014 - 2020",
+       x = "Month",
+       y = "Number of Bikers Counted",
+       fill = "Location") +
+  theme_minimal() +
+  
+  #add values and labels to x axis 
+  scale_x_continuous(breaks = month_breaks, labels = month_labels)+
+  #convert y axis labels to be a standard number ( including e before)
+    scale_y_continuous(labels = scales::comma)+
+  #update theme
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1), #angle x axis labels
+        plot.title = element_text(hjust = 0.5), # shift title 
+    #remove grid elements and background elements 
+    panel.grid.major = element_blank(), 
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    plot.background = element_blank(),
+    axis.line = element_blank(), # Removes axis lines
+    axis.ticks = element_blank(), # Removes axis ticks
+   axis.title.x = element_blank(), # Removes x-axis title
+    axis.title.y = element_blank(), # Removes y-axis title
+    text = element_text(family = "montserrat")  ) # update font
+
+```
+
+### Create bar plot of bike counts per year for building in inforgraphic
+
+```{r warning = FALSE}
+
+#initiate ggplot with year 
+ggplot(bike_data_yearly, aes(x = Year, y = yearly_total)) +
+#add geom column layer, lower opacity, make width 1 so the bars are touching
+geom_col(width = 1, alpha = .8) +
+# add yearly total values on the top of each bar in green
+geom_text(aes(label = yearly_total, vjust = 1.2, color = "white"), size = 3, color = "#C1DBB3")  + 
+  #add title
+  labs(title = "Total bike counts per year")+
+  #add year at the bottom of each bar in green
+geom_text(aes(label = Year, y = 0.05 * max(yearly_total)), size = 3.5, color = "#C1DBB3") +
+  theme_minimal()+
+  #update theme
+  theme(
+    #remove grid elements and background elements 
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    plot.background = element_blank(),
+    axis.line = element_blank(), # Removes axis lines
+    axis.text.x = element_blank(), # Removes x-axis labels
+    axis.text.y = element_blank(), # Removes y-axis labels
+    axis.ticks = element_blank(), # Removes axis ticks
+    axis.title.x = element_blank(), # Removes x-axis title
+    axis.title.y = element_blank(), # Removes y-axis title
+    text = element_text(family = "montserrat")  ) # update font
+
+
+```
+
+### Create heatmap to show how month counts vary across years
+
+```{r}
+
+#initiate ggplot with year and month, fill by monthly total
+ggplot(bike_data_year_month, aes(x = Month, y = Year, fill = monthly_total)) +
+ # add white border to the tile
+  geom_tile(color = "white") +
+  # define specific colors as the lower and upper values for color scale, give legend a title
+  scale_fill_gradient(low = "#C1DBB3", high = "#962B09", name = "Monthly Total") +
+
+  theme_minimal() +
+  #reverse order of years on y axis
+  scale_y_discrete(limits = rev(levels(bike_data_year_month$Year))) +
+  #add a title and x and y axis labels
+  labs(title = "Monthly Bike Counts by Year", x = "Month", y = "Year") +
+  #angle and shift x axis labels 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  #update theme elements
+  theme(
+    #remove grid elements and background elements 
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    plot.background = element_blank(),
+    axis.line = element_blank(), # Removes axis lines
+    text = element_text(family = "montserrat")  ) # update font
+
+```
+
+**What challenges did you encounter or anticipate encountering as you continue to build / iterate on your visualizations in R?** The biggest challenge I created was containing the evolvement of my ideas. Drawing out the anticipated inforgraphic definitely helped, but once I started to create plots and get my hands dirty coding, my focus started to change and new ideas started to circulate again. I am creating a fourth element for my infographic, a map of the different stations, which I encountered some challenges with. I was having trouble getting a Seattle basemap, so this aspect of my inforgraphic is still a work in progress. I was also having some troubles eliminating the space between my barplot,in order to make the plot itself look like a city building.
+
+**What ggplot extension tools / packages do you need to use to build your visualizations? Are there any that we haven't covered in class that you'll be learning how to use for your visualizations?** Most of my plots were achieve through basic ggplot and the `showtext` package.In terms of packages we hadn't yet used, I used the `ggimage` package for one of my plots. This package allowed me to add font awesome icons (as pngs) to my area plot. I am also going to be using the tmap package to create my location map.
+
+**What feedback do you need from the instructional team and / or your peers to ensure that your intended message is clear?** I think overall, I am looking for feedback on if the data/message in visualizations in my infographic flow/ go well together. I had a lot of different ideas ( i.e. including temperature data and focusing more on the seasonal trends of biking), and some of my initial ideas are not present in my visualizations, and some new ones have come into place. I want to get feedback on the value each plot adds, or if one of them is repeating info that another plot already portrays.

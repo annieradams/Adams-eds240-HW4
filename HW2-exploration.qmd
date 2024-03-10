@@ -4,7 +4,9 @@ subtitle: "Part II"
 author: "Annie Adams"
 date: 2023-01-27
 toc: true
-format: html
+format:
+  html:
+    embed-resources: true
 
 ---
 
@@ -25,7 +27,7 @@ library(ggplot2)
 ##                                import data                               ----
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-thirty_ninth <- read.csv(here::here("raw-data", "39th_Ave_NE_Greenway_at_NE_62nd_St_Bicycle_Counter__Out_of_Service__20240202.csv"))
+
 broadway<- read.csv(here::here("raw-data","Broadway_Cycle_Track_North_Of_E_Union_St_Bicycle_Counter__Out_of_Service__20240202.csv"))
 burke <- read.csv(here::here("raw-data","Burke_Gilman_Trail_north_of_NE_70th_St_Bicycle_and_Pedestrian_Counter_20240202.csv"))
 chief <- read.csv(here::here("raw-data","Chief_Sealth_Trail_North_of_Thistle_Bicycle_Counter__Out_of_Service__20240202.csv"))
@@ -42,7 +44,7 @@ fifty_eight <- read.csv(here::here("raw-data","NW_58th_St_Greenway_at_22nd_Ave_N
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # rename total bike column for dataframes with bike only, create total bike column for dataframes with pedestrians ( since we dont want to include pedestrians in our dataframe)
-#do this for renaming and totaling schema for all 7 datasets
+#do this renaming and totaling schema for all 7 datasets
 
 broadway <- broadway %>% rename("bike_total" = "Broadway.Cycle.Track.North.Of.E.Union.St.Total")
 burke$bike_total <- burke$Bike.North + burke$Bike.South
@@ -50,12 +52,10 @@ chief$bike_total <- chief$Bike.North + chief$Bike.South
 elliott$bike_total <- elliott$Bike.North + elliott$Bike.South
 fifty_eight <- fifty_eight %>% rename("bike_total" = "NW.58th.St.Greenway.st.22nd.Ave.NW.Total")
 mts$bike_total <- mts$Bike.East + mts$Bike.West
-thirty_ninth <- thirty_ninth %>% rename("bike_total" = "X39th.Ave.NE.Greenway.at.NE.62nd.St.Total")
 
 
 #rename southbound and northbound columns to have consistent naming for all datasets
 #add locations column for each dataset with a string of what the location is 
-
 #do this renaming and adding column step for all 7 datasets
 burke_clean <- burke %>% 
   rename("SB" = "Bike.South" , "NB" = "Bike.North") %>% 
@@ -77,10 +77,6 @@ fifty_eight_clean <- fifty_eight %>%
   select(Date, bike_total, EB, WB) %>% 
   mutate(loc = "58th")
 
-thirty_ninth_clean <- thirty_ninth %>% 
-  rename("NB" = "North", "SB" = "South") %>% 
-  select(Date, bike_total, NB, SB) %>% 
-  mutate(loc = "39th")
   
 
 mts_clean <- mts %>% 
@@ -97,7 +93,7 @@ broadway_clean <- broadway %>%
 
 ```{r}
 #merge all cleaned dataframes that track north and south traffic
-bike_data <- bind_rows(broadway_clean, burke_clean, chief_clean, elliott_clean,  thirty_ninth_clean)
+bike_data <- bind_rows(broadway_clean, burke_clean, chief_clean, elliott_clean,  mts_clean, fifty_eight_clean)
 ```
 
 
@@ -119,11 +115,11 @@ bike_data$Year <- year(bike_data$Date)
 
 #create month column with month
 bike_data$Month <- month(bike_data$Date) 
-
-
+years <- c(2014,2015,2016,2017,2018,2019,2020)
+bike <- bike_data[bike_data$Year %in% years, ]
 #create a dataframe of daily with the date, location and sum of bike counts for that day (i.e. aggregate hourly counts to be daily)-----
 
-bike_data_daily <- bike_data %>%
+bike_data_daily <- bike %>%
   #create date column that is aggregated by day
   mutate(date = floor_date(Date, unit = "day")) %>%
   #group by date and location
@@ -135,7 +131,7 @@ bike_data_daily <- bike_data %>%
 
 #create a dataframe that aggregates the monthly bike counts across all locations, should have two columns only ( month, monthly_total)
 
-bike_data_monthly <-bike_data %>%
+bike_data_monthly <-bike %>%
   #group by month
   group_by(Month) %>%
   #create new column that has the monthly count of bikes at all locations
@@ -144,7 +140,7 @@ bike_data_monthly <-bike_data %>%
   drop_na()
 
 # create data frame of monthly bike counts at each locations, should have three columns ( month, monthly total, location)
-bike_data_monthly_loc <-bike_data %>%
+bike_data_monthly_loc <-bike %>%
   #group by month and location
   group_by(Month, loc) %>%
   #create new column that has the monthly count of bikes for each location
@@ -152,9 +148,27 @@ bike_data_monthly_loc <-bike_data %>%
   #drop na values (0)
   drop_na()
 
+bike_data_year_month<- bike %>% 
+  group_by(Year, Month) %>% 
+  summarize(monthly_total = sum(bike_total, na.rm = TRUE)) %>%
+  #drop na values (0)
+  drop_na()
+
+bike_data_year_month$Month <- factor(month.abb[bike_data_year_month$Month], levels = month.abb)
+bike_data_year_month$Year <- factor(bike_data_year_month$Year)
+
+
+  
+
+
+bike_data_yearly <- bike %>% 
+  group_by(Year) %>% 
+  summarize(yearly_total = sum(bike_total, na.rm = TRUE))
+  
+
 #create data from that includes monthly north and southbound totals  to compare the difference between the two in visualizations
 
-nb_sb<-bike_data %>%
+nb_sb<-bike %>%
   #group by month
   group_by(Month) %>%
   #create northbound and southbound column that aggregates monthly totals for southbound and northbound each 
@@ -295,3 +309,6 @@ ggplot(nb_sb_long, aes(x = Month, y = total, fill = direction)) +
 
 3. What challenges do you foresee encountering with your data? These can be data wrangling and / or visualization challenges. (4-6 sentences)
 **I don't see too many challenges wrangling my data. The data itself is quite simple and I have been able to aggregate it at the daily and monthly level in a fairly efficient manner. I do, however, see myself having challenges regarding visualizing the data to the three different groups, specifically a visualization to be included in a paper, technical documentation, or report. The data itself is quite basic, and I think any title I give a plot would easily tell the viewer what they are looking at. One idea I did have for this plot in particular was to create a sankey diagram showing the different directions traveled. I also think I may have some challenges getting consistent samples of bike data. A lot of the bike stations are now out of service, but still have a lot of data from the past. I think it will be a challenge to come up with a way to accurately represent this data with consistent samples from different locations.**
+
+
+
