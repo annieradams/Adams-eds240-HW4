@@ -7,7 +7,6 @@ format:
   html:
     embed-resources: true
     code-fold: true
-editor: visual
 css: custom-style.css
 ---
 
