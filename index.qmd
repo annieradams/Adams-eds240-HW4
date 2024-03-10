@@ -1,12 +1,20 @@
 ---
 title: "Seattle Bike Trends"
-author: "Annie Adams"
+author: 
+  - name: Annie Adams 
+  - url: https://annieradams.github.io/
+  - affiliation: MEDS
 date: 2024-03-02
+categories: [Data Visualization, R, infographic]
+
 toc: true
 format:
   html:
     embed-resources: true
     code-fold: true
+    code-summary: "checkout the code!"
+    code-overflow: wrap
+    code-block-bg: "#cce0dd"
 css: custom-style.css
 ---
 
