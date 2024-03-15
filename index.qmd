@@ -38,13 +38,15 @@ I have included all code to my three different visualizations below! All plots w
 
 ```{r fig.width=10, fig.height=8, out.width='100%', echo=FALSE}
 
-library(png)
-library(grid)
-img <- readPNG('output/infographic.png')
-grid.raster(img)
+ library(png)
+ library(grid)
+ img <- readPNG('output/infographic2.png')
+ grid.raster(img)
 
 ```
 
+
+![Pictured: An Infographic on Seattle Bike Trends](output/infographic2.jpg){width="100%"}
 ## Code for Infographic Elements
 
 ### Load Libraries
