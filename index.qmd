@@ -306,9 +306,9 @@ mountain <- ggplot(data = bike_data_monthly_loc,  aes(x = Month, y = monthly_tot
 #save plot as png to add to infographic base using magick
 png('output/mountain.png',width = 22, height = 20, units = 'in', res = 300, bg = "transparent")
 print(mountain)  # Ensure the plot is explicitly printed
-dev.off()
+invisible(dev.off())
 
-
+mountain
 
 
 ```
