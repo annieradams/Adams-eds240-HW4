@@ -36,17 +36,8 @@ I have included all code to my three different visualizations below! All plots w
 
 ## Seattle Bike Count Infographic
 
-```{r fig.width=10, fig.height=8, out.width='100%', echo=FALSE}
 
- library(png)
- library(grid)
- img <- readPNG('output/infographic2.png')
- grid.raster(img)
-
-```
-
-
-![Pictured: An Infographic on Seattle Bike Trends](output/infographic2.jpg){width="100%"}
+![Pictured: An Infographic on Seattle Bike Trends](output/infographic.pdf){width="100%"}
 ## Code for Infographic Elements
 
 ### Load Libraries
@@ -64,6 +55,8 @@ library(ggimage)
 library(patchwork)
 library(ggtext)
 library(magick)
+library(png)
+library(grid)
 
 ```
 
