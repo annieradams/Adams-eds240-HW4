@@ -37,7 +37,11 @@ I have included all code to my three different visualizations below! All plots w
 ## Seattle Bike Count Infographic
 
 
-![Pictured: An Infographic on Seattle Bike Trends](output/infographic.pdf){width="100%"}
+![Pictured: An Infographic on Seattle Bike Trends](output/infographic.pdf){width="15%"}
+
+
+
+
 ## Code for Infographic Elements
 
 ### Load Libraries
