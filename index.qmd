@@ -32,7 +32,7 @@ When arranging the elements in my infographic, I considered many different optio
 
 Once I decided on the current color palette, I used color blind simulator to see if the palette I chose was color friendly. The color palette I chose was centered around differentiating the different locations in my area plot, and these differences were still clear among all color deficiencies. Before creating my infographic, I used a DEI lens by looking into the different locations that the bike sensors were implemented to see if they were in only wealthy neighborhoods that would likely count more bikes. The bike locations came from different road types (i.e. bike pathways, public roads, etc.) and were not privy to any certain area.
 
-I have included all code to my three different visualizations below! All plots were generated using `ggplot()` and I used `magick()` to add these plots together create an infographic. Because I wanted to add on a few more compelx graphic design elements that could not be completed in R, I downloaded a png of my base infographic, and added some finishing touches in Canva. I hope you enjoy exploring my infographic and code below!
+I have included all code to my three different visualizations below! All plots were generated using `ggplot()` and I used `magick()` to add these plots together create a base infographic.When utilizing   `magick()`, some text was rendering fuzzy, despite being clear in the inidvidual PNGs. To make text as legible as possible, I ended up individually adding the PNGs to a Canva document. I used the base infographic that I created below ( with the background color and title) as the background, and then added all other elements on top in Canva. I hope you enjoy exploring my infographic and code below!
 
 ## Seattle Bike Count Infographic
 
@@ -40,7 +40,7 @@ I have included all code to my three different visualizations below! All plots w
 
 library(png)
 library(grid)
-img <- readPNG('output/seattle_infographic.png')
+img <- readPNG('output/infographic.png')
 grid.raster(img)
 
 ```
@@ -260,8 +260,8 @@ mountain <- ggplot(data = bike_data_monthly_loc,  aes(x = Month, y = monthly_tot
   #add rotated downward bike image, play around with sizes to fit top ridge of graph
   geom_image(y = 750000, x = 9.5, image = "images/rotate_down_bike.png", size = .2 ) +
 #add title, subtitle, x and y axis labels, and legend title
-  labs(title = "Number of Bikers counted at Seattle Bike Detection Stations ",
-       subtitle = "Data from 2014 - 2020",
+  labs(#title = "Seasonal Changes see heavier\nbike traffic in Spring & Summer",
+       #subtitle = "Data from 2014 - 2020",
        x = "Month",
        y = "Number of Bikers Counted",
        fill = "Location") +
@@ -273,13 +273,11 @@ mountain <- ggplot(data = bike_data_monthly_loc,  aes(x = Month, y = monthly_tot
     scale_y_continuous(labels = scales::comma)+
   #update theme
   theme(
-        plot.title = element_text( hjust = 0, face = "bold", size = 14 ), # shift title 
-        plot.subtitle = element_text( hjust = 0, size = 12),
     #remove grid elements and background elements 
     panel.grid.major = element_blank(), 
     panel.grid.minor = element_blank(),
-    axis.text.x = element_text(angle = 45, hjust = 1, colour = "black", size = 20, margin = margin(t = .4)),
-    axis.text.y = element_text( colour = "black", size = 18),
+    axis.text.x = element_text(angle = 45, hjust = 1, colour = "#FFFDD0", size = 28, margin = margin(t = .4)),
+    axis.text.y = element_text( colour = "#FFFDD0", size = 28),
     axis.line = element_blank(), # Removes axis lines
     axis.ticks = element_blank(), # Removes axis ticks
    axis.title.x = element_blank(), # Removes x-axis title
@@ -290,23 +288,27 @@ mountain <- ggplot(data = bike_data_monthly_loc,  aes(x = Month, y = monthly_tot
    #update font to montserrat
     text = element_text(family = "montserrat") ,
    #update legend margins to be closer to plot
-   legend.margin = margin(t = -5, r = -10, b = -5, l = -10, unit = "pt"),
-    legend.box.margin = margin(t = 0, r = -5, b = 0, l = -5, unit = "pt"),
+   legend.margin = margin(t = 0, r = 0, b = -5, l = -10, unit = "pt"),
+    legend.box.margin = margin(t = 0, r = -5, b = -25, l = -5, unit = "pt"),
    #updaete space and size between legend elements
-    legend.spacing.x = unit(4, "pt"),
-    legend.spacing.y = unit(4, "pt"),
-    legend.key.size = unit(9, "pt"),
-    legend.text = element_text(size = 16)) # update font size
+    legend.spacing.x = unit(6, "pt"),
+    legend.spacing.y = unit(.75, "cm"),
+   legend.position = c(.8,1),
+    legend.key.size = unit(30, "pt"),
+    legend.justification = c(1, 1),
+    legend.text = element_text(size = 20, colour = "#FFFDD0"),
+   legend.title = element_text(colour = "#FFFDD0", size = 28))+ # update font size
+      guides(fill = guide_legend(byrow = TRUE))
 
 
 
 #save plot as png to add to infographic base using magick
-# png('output/mountain.png',width = 10, height = 8, units = 'in', res = 300, bg = "transparent")
-# print(mountain)  # Ensure the plot is explicitly printed
-# dev.off()
+png('output/mountain.png',width = 22, height = 20, units = 'in', res = 300, bg = "transparent")
+print(mountain)  # Ensure the plot is explicitly printed
+dev.off()
 
 
-mountain
+
 
 ```
 
@@ -341,7 +343,7 @@ geom_col(width = .7, alpha = .7, fill = "#FFFDD0", color = "black", size = .2) +
 
 
 #save plot as png to add to infographic base using magick
- #ggsave('output/city_buildings.png', plot = city_buildings, device = 'png',width = 700, height = 800, units = 'px', dpi = 700)
+  ggsave('output/city_buildings.png', plot = city_buildings, device = 'png',width = 700, height = 800, units = 'px', dpi = 700)
 
 city_buildings
 ```
@@ -355,16 +357,16 @@ heatmap <- ggplot(bike_data_year_month, aes(x = Month, y = Year, fill = monthly_
   scale_fill_gradient(low = "#FFFDD0", high = "#B57114",  labels = scales::comma) +  # Define colors for the gradient
   theme_minimal() +
   scale_y_discrete(limits = rev(levels(bike_data_year_month$Year))) +  # Reverse order of years on y axis
-  labs(title = "Monthly Bike Counts by Year") +  # Add title
+  #labs(title = "Seasonal Changes see heavier\nbike traffic in Spring & Summer") +  # Add title
    guides(
      fill = guide_colourbar(title = "Monthly Total", title.position = "bottom", title.hjust = 0.5, barwidth = 5, barheight = .25,  # Adjust the size of the gradient bar and place legend underneath plot
     label.position = "bottom")
    ) + 
   theme(
     #angle x axis ticks, update size and typeface color
-    axis.text.x = element_text(angle = 45, hjust = 1, colour = "black", size = 11),
+    axis.text.x = element_text(angle = 45, hjust = 1, colour = "#FFFDD0", size = 11),
     #update size and typeface color for y axis ticks
-    axis.text.y = element_text(colour = "black", size = 11),  
+    axis.text.y = element_text(colour = "#FFFDD0", size = 11),  
     #remove grid elements
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
@@ -382,20 +384,21 @@ heatmap <- ggplot(bike_data_year_month, aes(x = Month, y = Year, fill = monthly_
     #update legend marigins
     legend.margin = margin(t = -5, r = -10, b = -5, l = -10, unit = "pt"),
     #update legend box margins
-    legend.box.margin = margin(t = 0, r = -5, b = 0, l = -5, unit = "pt"),
+    legend.box.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "pt"),
     #update spacing around x and y axis of legend
     legend.spacing.x = unit(2, "pt"),
     legend.spacing.y = unit(2, "pt"),
     legend.key.size = unit(1, "pt"),
     #update legend text size
-    legend.text = element_text(size = 10),
+    legend.text = element_text(size = 10, colour = "#FFFDD0"),
     #remove legend title
-    legend.title = element_blank()
+    legend.title = element_blank(),
+    plot.title = element_text(colour = "#FFFDD0", hjust = 0.5, size = 14)
   )
 
 
 #save plot as png to add to infographic base using magick
-#ggsave('output/heatmap.png', plot = heatmap, device = 'png',width = 500, height = 500, units = 'px', dpi =300)
+ ggsave('output/heatmap.png', plot = heatmap, device = 'png',width = 500, height = 500, units = 'px', dpi =300)
 
 
 heatmap
@@ -431,13 +434,13 @@ g_base <- ggplot() +
   #update subtitle typeface, adjst margins and horizontal justification
     plot.subtitle = element_text(family = "montserrat", hjust = 0.5, margin = margin( t = -20, b = 30), size = 12),  
   #adjut plot margins
-    plot.margin = margin(b = 10, t = 20, r = 10, l = 10)  
+    plot.margin = margin(b = 10, t = 7, r = 10, l = 10)  
   )
 
 g_base
 
 #save plot as png to add to make infographic  using magick
- #ggsave('output/g_base.png', plot = g_base, device = 'png',width = 675, height = 1200, units = 'px', dpi = 300)
+ ggsave('output/g_base.png', plot = g_base, device = 'png',width = 675, height = 1200, units = 'px', dpi = 300)
 
 
 ```
@@ -446,7 +449,7 @@ g_base
 
 #read all images created above and remove edges that are the background color from the plots
 mountain_image <- image_read('output/mountain.png') %>%
-  image_trim()
+  image_trim() 
 
 buildings_image <- image_read('output/city_buildings.png') %>%
   image_trim()
@@ -463,11 +466,11 @@ title_image <- image_read('output/g_base.png')
 #arrange all plots onto infographic base
 title_image %>%
   # add mountain plot on the middle left of plot
-  image_composite(image_scale(mountain_image, '470x'), offset = '+2+500') %>%  
+  image_composite(image_scale(mountain_image, '400x'), offset = '+2+450') %>%  
   #add the buildings image on the lower right
   image_composite(image_scale(buildings_image, "300x"), gravity = "Center", offset = "+180+425") %>%  
-  #add the heatmap on the top left
-  image_composite(image_scale(heatmap_image, "350"), offset = "+300+180") %>%  
+  #add the heatmap on the top right
+  image_composite(image_scale(heatmap_image, "350"), offset = "+280+125") %>%  
   #add the space needle png next to the buildings
    image_composite(image_scale(space_needle_image, '100x'), gravity = "Center", offset = '-10+444') %>% 
 #create png
