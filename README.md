@@ -4,5 +4,5 @@ The intersection of two of my biggest interests came to life in this project: Cy
 
 
 
+![bike_info](https://github.com/annieradams/bike-usage-infographic/assets/141262273/e3e856bc-a9fa-44a5-bc0e-db4abf56cb59)
 
-[download.pdf](https://github.com/user-attachments/files/15950404/download.pdf)
